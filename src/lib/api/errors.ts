@@ -3,7 +3,7 @@
  * 형식: { error: { code, message } }
  */
 import { NextResponse } from "next/server";
-import { ZodError, z } from "zod";
+import { ZodError } from "zod";
 
 import { DartApiError, DartConfigError, DartHttpError } from "@/lib/dart/errors";
 
@@ -32,6 +32,11 @@ export function errorResponse(
   );
 }
 
+/** 이슈별 메시지를 이어 붙인다. 스키마의 메시지에 필드명을 포함시키는 것을 전제로 한다. */
+function formatZodError(error: ZodError): string {
+  return error.issues.map((issue) => issue.message).join("; ");
+}
+
 /**
  * 예외를 HTTP 에러 응답으로 매핑한다.
  * - ZodError → 400, DartApiError/DartHttpError → 502, DartConfigError → 500, 그 외 → 500
@@ -39,7 +44,7 @@ export function errorResponse(
  */
 export function toErrorResponse(error: unknown): NextResponse<ApiErrorBody> {
   if (error instanceof ZodError) {
-    return errorResponse("INVALID_QUERY", z.prettifyError(error), 400);
+    return errorResponse("INVALID_QUERY", formatZodError(error), 400);
   }
   if (error instanceof DartApiError) {
     return errorResponse("DART_API_ERROR", error.message, 502);
