@@ -31,15 +31,19 @@ pnpm test       # Vitest
 | 경로 | 역할 | 의존 가능 대상 |
 | --- | --- | --- |
 | `src/app` | 라우트, 페이지, Route Handler (`app/api/**/route.ts`) | 모든 `src/*` |
-| `src/lib/dart` | OpenDART API 클라이언트 (fetch 래퍼, 응답 타입/스키마, 에러) — **서버 전용** | `src/types` |
+| `src/lib/api` | Route Handler 공통 유틸 (에러 응답 형식, 예외 → HTTP 상태 매핑) | `src/lib/dart`, `src/types` |
+| `src/lib/dart` | OpenDART API 클라이언트 (fetch 래퍼, 응답 타입/스키마, 에러), 기업코드 파싱·검색 — **서버 전용** | `src/data`, `src/types` |
 | `src/lib/ratios` | 재무비율 계산 순수 함수 — **프레임워크 비의존** | `src/types` |
 | `src/components` | UI 컴포넌트 (표시 전용) | `src/types`, `src/lib/ratios` |
+| `src/data` | 커밋되는 정적 데이터 (`corp-codes.json` 등, 스크립트로 생성 — 직접 수정 금지) | 없음 |
 | `src/types` | 여러 레이어가 공유하는 공용 타입 | 없음 |
+| `scripts` | 개발용 Node 스크립트 (`pnpm sync:corp` 등, tsx 실행). 다운로드·파일 I/O만 담당하고 로직은 `src/lib`의 순수 함수에 둔다 | `src/lib`, `src/types` |
 | `tests` | Vitest 테스트 (`*.test.ts`) | 모든 `src/*` |
 
 - `src/lib/ratios`는 React, Next.js, fetch, `process.env` 등을 import 하지 않는다.
 - `src/components`는 `src/lib/dart`를 import 하지 않는다. 데이터는 Route Handler를 거쳐 받는다.
 - 경로 별칭 `@/*` → `src/*` 를 사용한다.
+- `scripts/`에서 import 하는 `src/lib` 모듈은 `server-only`를 import 하면 안 된다(Node에서 throw). `@/lib/dart` 배럴 대신 개별 파일을 import 한다.
 
 ## 코딩 규칙
 
