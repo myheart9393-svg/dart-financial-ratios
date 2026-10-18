@@ -1,4 +1,5 @@
 allowBuilds:
+  esbuild: true
   unrs-resolver: true
 
 # eslint-config-next(FlatCompat)는 플러그인을 프로젝트 루트 기준으로 resolve 하므로 루트로 hoist 한다.
