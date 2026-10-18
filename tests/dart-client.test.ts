@@ -46,20 +46,45 @@ describe("dartFetch", () => {
 
     const result = await dartFetch("test.json", {}, schema, { apiKey: "KEY", fetchImpl });
 
-    expect(result.list).toEqual(["a"]);
+    expect(result?.list).toEqual(["a"]);
     const calledUrl = fetchImpl.mock.calls[0]?.[0] as URL;
     expect(calledUrl.searchParams.get("crtfc_key")).toBe("KEY");
   });
 
-  it("status가 000이 아니면 DartApiError를 throw 한다", async () => {
+  it("status가 013(데이터 없음)이면 기본적으로 null을 반환한다", async () => {
     const fetchImpl = vi
       .fn<typeof fetch>()
       .mockResolvedValue(jsonResponse({ status: "013", message: "조회된 데이타가 없습니다." }));
 
-    const promise = dartFetch("test.json", {}, schema, { apiKey: "KEY", fetchImpl });
+    const result = await dartFetch("test.json", {}, schema, { apiKey: "KEY", fetchImpl });
+
+    expect(result).toBeNull();
+  });
+
+  it("emptyStatuses를 비우면 013도 DartApiError로 throw 한다", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(jsonResponse({ status: "013", message: "조회된 데이타가 없습니다." }));
+
+    const promise = dartFetch("test.json", {}, schema, {
+      apiKey: "KEY",
+      fetchImpl,
+      emptyStatuses: [],
+    });
 
     await expect(promise).rejects.toBeInstanceOf(DartApiError);
     await expect(promise).rejects.toMatchObject({ status: "013" });
+  });
+
+  it("status가 000·emptyStatuses 외의 값이면 DartApiError를 throw 한다", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(jsonResponse({ status: "020", message: "요청 제한을 초과하였습니다." }));
+
+    const promise = dartFetch("test.json", {}, schema, { apiKey: "KEY", fetchImpl });
+
+    await expect(promise).rejects.toBeInstanceOf(DartApiError);
+    await expect(promise).rejects.toMatchObject({ status: "020" });
   });
 
   it("HTTP 오류면 DartHttpError를 throw 한다", async () => {
